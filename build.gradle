@@ -56,8 +56,8 @@ graalvmNative {
         vendor = JvmVendorSpec.matching("GraalVM Community")
       }
       mainClass.set(mainVerticleName)
-      buildArgs.add("--enable-all-security-services")
       buildArgs.add("--initialize-at-run-time=io.netty.handler.codec.compression.ZstdOptions")
+      buildArgs.add("--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils")   
     }
   }
 }

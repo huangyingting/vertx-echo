@@ -3,8 +3,6 @@ package vertx.echo;
 import io.vertx.core.Vertx;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BodyHandler;
 
 public class EchoVerticle extends AbstractVerticle {
 
@@ -14,30 +12,33 @@ public class EchoVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+    vertx.createHttpServer().requestHandler(req -> {
+      req.body().onComplete(ar -> {
+        StringBuilder sb = new StringBuilder();
 
-    Router router = Router.router(vertx);
-    router.route().handler(BodyHandler.create());
+        sb.append(":method: ")
+            .append(req.method().toString())
+            .append(System.getProperty("line.separator"));
 
-    router.route().handler(ctx -> {
-      StringBuilder response = new StringBuilder();
-      response.append(":method: ");
-      response.append(ctx.request().method().toString());
-      response.append("\r\n");
+        sb.append(":url: ")
+            .append(req.uri().toString())
+            .append(System.getProperty("line.separator"));
 
-      response.append(":url: ");
-      response.append(ctx.request().uri());
-      response.append("\r\n");
+        req.headers().forEach((key, values) -> sb.append(key)
+            .append(": ")
+            .append(values.toString())
+            .append(System.getProperty("line.separator")));
 
-      ctx.request().headers().forEach((key, values) -> response.append(key + ": " + values.toString() + "\r\n"));
-      response.append("\r\n");
+        if (ar.succeeded()) {
+          sb.append(System.getProperty("line.separator"));
+          sb.append(ar.result().toString());
+          req.response()
+              .putHeader("content-type", "text/plain")
+              .end(sb.toString());
+        }
+      });
 
-      response.append(ctx.body().asString());
-      ctx.response()
-          .putHeader("content-type", "text/plain")
-          .end(response.toString());
-    });
-
-    vertx.createHttpServer().requestHandler(router).listen(8080, http -> {
+    }).listen(8080, http -> {
       if (http.succeeded()) {
         startPromise.complete();
         System.out.println("HTTP server started on port 8888");
