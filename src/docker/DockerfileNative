@@ -1,0 +1,9 @@
+FROM ghcr.io/graalvm/native-image:ol7-java17-22.2.0 AS graalvm
+WORKDIR /home/app
+COPY build/libs/*-fat.jar /home/app/application.jar
+RUN native-image -cp /home/app/application.jar --no-fallback -H:Name=application -J--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED -J--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED -J--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jni=ALL-UNNAMED -J--add-exports=org.graalvm.sdk/org.graalvm.nativeimage.impl=ALL-UNNAMED -H:Class=vertx.echo.EchoVerticle --initialize-at-run-time=io.netty.handler.codec.compression.ZstdOptions --enable-all-security-services
+FROM frolvlad/alpine-glibc:alpine-3.12
+RUN apk --no-cache update && apk add libstdc++
+EXPOSE 8080
+COPY --from=graalvm /home/app/application /app/application
+ENTRYPOINT ["/app/application"]

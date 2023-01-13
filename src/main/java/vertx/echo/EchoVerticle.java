@@ -37,7 +37,7 @@ public class EchoVerticle extends AbstractVerticle {
           .end(response.toString());
     });
 
-    vertx.createHttpServer().requestHandler(router).listen(8888, http -> {
+    vertx.createHttpServer().requestHandler(router).listen(8080, http -> {
       if (http.succeeded()) {
         startPromise.complete();
         System.out.println("HTTP server started on port 8888");
