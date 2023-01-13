@@ -1,0 +1,82 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+
+plugins {
+  id "java"
+  id "application"
+  id "com.github.johnrengelman.shadow" version "7.0.0"
+  id "org.graalvm.buildtools.native" version "0.9.19"
+}
+
+group = "vertx.echo"
+version = "1.0.0-SNAPSHOT"
+
+repositories {
+  mavenCentral()
+}
+
+def vertxVersion = "4.3.7"
+def junitJupiterVersion = "5.7.0"
+
+def mainVerticleName = "vertx.echo.EchoVerticle"
+def launcherClassName = "io.vertx.core.Launcher"
+
+def watchForChange = "src/**/*"
+def doOnChange = "${projectDir}/gradlew classes"
+
+application {
+  mainClass.set(launcherClassName)
+}
+
+dependencies {
+  implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
+  implementation("io.vertx:vertx-core")
+  implementation("io.vertx:vertx-web")
+  testImplementation("io.vertx:vertx-junit5")
+  testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+
+graalvmNative {
+  binaries.all {
+    resources.autodetect()
+  }
+  toolchainDetection.set(false)
+}
+
+graalvmNative {
+  binaries {
+    main {
+      javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.matching("GraalVM Community")
+      }
+      mainClass.set(mainVerticleName)
+      buildArgs.add("--enable-all-security-services")
+      buildArgs.add("--initialize-at-run-time=io.netty.handler.codec.compression.ZstdOptions")
+    }
+  }
+}
+
+tasks.withType(ShadowJar) {
+  archiveClassifier.set("fat")
+  manifest {
+    attributes "Main-Verticle": mainVerticleName
+  }
+  mergeServiceFiles()
+}
+
+tasks.withType(Test) {
+  useJUnitPlatform()
+  testLogging {
+    events "PASSED", "SKIPPED", "FAILED"
+  }
+}
+
+tasks.withType(JavaExec) {
+  args = ["run", mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$launcherClassName", "--on-redeploy=$doOnChange"]
+}
