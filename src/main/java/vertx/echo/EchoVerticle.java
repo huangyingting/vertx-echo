@@ -13,7 +13,7 @@ public class EchoVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
     vertx.createHttpServer().requestHandler(req -> {
-      req.body().onComplete(ar -> {
+      req.bodyHandler(buffer -> {
         StringBuilder sb = new StringBuilder();
 
         sb.append(":method: ")
@@ -29,15 +29,12 @@ public class EchoVerticle extends AbstractVerticle {
             .append(values.toString())
             .append(System.getProperty("line.separator")));
 
-        if (ar.succeeded()) {
-          sb.append(System.getProperty("line.separator"));
-          sb.append(ar.result().toString());
-          req.response()
-              .putHeader("content-type", "text/plain")
-              .end(sb.toString());
-        }
+        sb.append(System.getProperty("line.separator"));
+        sb.append(buffer.toString());
+        req.response()
+            .putHeader("content-type", "text/plain")
+            .end(sb.toString());
       });
-
     }).listen(8080, http -> {
       if (http.succeeded()) {
         startPromise.complete();
