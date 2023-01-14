@@ -31,7 +31,6 @@ application {
 dependencies {
   implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
   implementation("io.vertx:vertx-core")
-  implementation("io.vertx:vertx-web")
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }
@@ -57,7 +56,8 @@ graalvmNative {
       }
       mainClass.set(mainVerticleName)
       buildArgs.add("--initialize-at-run-time=io.netty.handler.codec.compression.ZstdOptions")
-      buildArgs.add("--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils")   
+      buildArgs.add("--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils")
+      verbose = true
     }
   }
 }
